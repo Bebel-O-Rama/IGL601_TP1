@@ -1,4 +1,4 @@
-#include "dummy.h"
+#include "utilitary.h"
 
 #include <fstream>
 #include <iostream>
@@ -14,25 +14,25 @@
 
 
 
-// utilisée pour les tests
+// utilisï¿½e pour les tests
 int GetAnswerToLifeUniverseAndEverything()
 {
 	return 42;
 }
 
-// cette fonction est dédiée à être éliminée -- seulement de test
-void TestDeTrucs() throw(boost::filesystem::filesystem_error) // le throw ici est "deprecated". Il est juste conserver à titre de documentation
+// cette fonction est dï¿½diï¿½e ï¿½ ï¿½tre ï¿½liminï¿½e -- seulement de test
+void TestDeTrucs() throw(boost::filesystem::filesystem_error) // le throw ici est "deprecated". Il est juste conserver ï¿½ titre de documentation
 {
 	/*
-		Le but de la fonction est de présenter les techniques utiles pour la
-		réalisation du travail
+		Le but de la fonction est de prï¿½senter les techniques utiles pour la
+		rï¿½alisation du travail
 		Ceci inclus:
 				l'utilisation de boost::filesystem
-				la génération de sha1
+				la gï¿½nï¿½ration de sha1
 				l'utilisation de zlib (de boost)
 
 		Il manque beaucoup de trucs ici comme, par exemple, la gestion des erreurs
-		Ce n'est pas le but de ce fichier de faire ce genre de détail
+		Ce n'est pas le but de ce fichier de faire ce genre de dï¿½tail
 	*/
 
 	using boost::uuids::detail::sha1;
@@ -67,7 +67,7 @@ void TestDeTrucs() throw(boost::filesystem::filesystem_error) // le throw ici es
 	content += stream.str();
 
 	//---------------------------------------------------------------
-	// poutine syntaxique pour créer une compression en zlib
+	// poutine syntaxique pour crï¿½er une compression en zlib
 	// https://www.boost.org/doc/libs/1_71_0/libs/iostreams/doc/classes/zlib.html
 	boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
 	in.push(boost::iostreams::zlib_compressor());
@@ -80,12 +80,12 @@ void TestDeTrucs() throw(boost::filesystem::filesystem_error) // le throw ici es
 	const auto fileName = "testResultat.txt";
 
 	auto path = boost::filesystem::current_path();	// ou sommes nous?
-	const auto pathFolder = path.append("folder");	// ajouter un fichier de la manière décidée par la plateforme
-													// comme ca, on aura jamais de problème de plateforme
+	const auto pathFolder = path.append("folder");	// ajouter un fichier de la maniï¿½re dï¿½cidï¿½e par la plateforme
+													// comme ca, on aura jamais de problï¿½me de plateforme
 	
 	if (!boost::filesystem::exists(pathFolder))  // peut lancer une exception
 	{
-		// si le répertoire n'existe pas, on le crée
+		// si le rï¿½pertoire n'existe pas, on le crï¿½e
 		boost::filesystem::create_directory(pathFolder); // exception possible
 	}
 
@@ -103,11 +103,44 @@ void TestDeTrucs() throw(boost::filesystem::filesystem_error) // le throw ici es
 	// ofstream tout normal et gentil
 	std::ofstream outputFile(path.append(fileName).c_str());
 
-	// on écrit la compression, deux sauts de ligne et le contenu
+	// on ï¿½crit la compression, deux sauts de ligne et le contenu
 	outputFile << compressed << std::endl << std::endl << content;
 
-	// il faudrait valider l'écriture ici...
+	// il faudrait valider l'ï¿½criture ici...
 
 	outputFile.close(); // on aime etre propre alors on ferme le fichier
-						// théoriquement, le RAII devrait le faire pour nous
+						// thï¿½oriquement, le RAII devrait le faire pour nous
+}
+
+//---------------------------------------------
+// le sha
+// https://pragmaticjoe.blogspot.com/2015/02/how-to-generate-sha1-hash-in-c.html
+std::string getSHA(std::string inputStr)
+{
+	using boost::uuids::detail::sha1;
+	using std::ifstream;
+
+	sha1 sha;
+
+	sha.process_bytes(inputStr.c_str(), inputStr.length());
+
+	unsigned int hash[5];
+	sha.get_digest(hash);
+	
+	std::stringstream stream;
+
+	for (int i = 0; i < 5; ++i) {
+		stream << std::hex << hash[i]; 
+	}
+
+	inputStr = stream.str();
+
+	return inputStr;
+}
+
+std::string getRandSHA()
+{
+	time_t timer = time_t();
+    const time_t currTime = time(&timer);
+    return getSHA(ctime(&currTime));
 }

@@ -1,7 +1,26 @@
 #include <iostream>
 #include <string>
 #include <cstring>
-#include <dummy.h>
+#include <utilitary.h>
+
+#include <boost/uuid/detail/sha1.hpp>
+
+//---------------------------
+//METTRE DANS UN HEADER
+void init();
+void createObjects();
+
+void add();
+
+void commit();
+
+void checkout();
+
+void writeFile(std::string filePath, std::string fileText);
+std::string readFile(std::string filePath);
+//---------------------------
+
+const std::string GIT_PATH = "./../git/";
 
 // The main loop takes the input argument and 
 int main(int argc, char * arcv[])
@@ -33,7 +52,7 @@ int main(int argc, char * arcv[])
             else if (argc == 2)
             {
                 //TODO : Implement gitus init
-                std::cout << "Not yet implemented" << std::endl;
+                init();
             }
             else
             {
@@ -51,7 +70,7 @@ int main(int argc, char * arcv[])
                 else
                 {
                     //TODO : Implement gitus add
-                    std::cout << "Not yet implemented" << std::endl;
+                    add();
                 }
             }
             else
@@ -75,7 +94,7 @@ int main(int argc, char * arcv[])
             else if (argc == 4)
             {
                 //TODO : Implement gitus commit
-                std::cout << "Not yet implemented" << std::endl;
+                commit();
             }  
             else
             {
@@ -93,7 +112,7 @@ int main(int argc, char * arcv[])
                 else
                 {
                     //TODO : Implement gitus checkout
-                    std::cout << "Not yet implemented" << std::endl;
+                    checkout();
                 }
             }
             else
@@ -114,5 +133,133 @@ int main(int argc, char * arcv[])
     return 0;
 }
 
+//-----------------------------------------
+// TODO: Wrapper dans une classe (?)
+void init() 
+{
+    std::cout << "Repository is being initialized..." << std::endl;
 
+    // > Créer le dossier '.git'
+    //     > Faire dossier 'objects'
+    if (!boost::filesystem::exists(GIT_PATH + "objects"))  // peut lancer une exception
+	{
+		boost::filesystem::create_directory(GIT_PATH + "objects"); // exception possible
+	}
 
+    //     > Créer dossier 'heads' (contenant 'main' et autres branches)
+    //     ­­   > Créer fichier 'main' (ou 'master')
+        if (!boost::filesystem::exists(GIT_PATH + "heads"))  // peut lancer une exception
+	{
+		boost::filesystem::create_directory(GIT_PATH + "heads/main"); // exception possible
+	}
+    writeFile(GIT_PATH + "heads/main", getRandSHA());
+    
+    //     > Ajouter fichier 'HEAD'
+    writeFile(GIT_PATH + "HEAD", "ref: heads/main");
+
+    //     > Ajouter fichier 'index'
+    writeFile(GIT_PATH + "index", "");
+
+    //
+    //----------NON-DEMANDÉS----------
+    //
+    //     > Dossier 'refs'
+    //     > Dossier 'info'
+    //     > Fichier 'config'
+    //     > Fichier 'description'
+    
+    std::cout << "Repository has been initialized successfully!" << std::endl;
+}
+
+void createObjects()
+{
+
+}
+//-----------------------------------------
+
+std::string readFile(std::string filePath)
+{
+    using std::ifstream;
+	using std::string;
+
+	// lecture du fichier
+	ifstream file(filePath);	// pas besoin de gerer l'acces
+								// mais il faut s'assurer que le fichier existe
+	string content{	std::istreambuf_iterator<char>(file),
+					std::istreambuf_iterator<char>() };
+}
+
+void writeFile(std::string filePath, std::string fileText)
+{
+    using std::ofstream;
+
+    std::ofstream ofs (filePath, std::ofstream::out);
+
+    ofs << fileText;
+
+    ofs.close();
+}
+
+//-----------------------------------------
+// A retirer: utiliser utilitary.cpp
+//-----------------------------------------
+
+// void writeShaToFile(std::string file) 
+// {
+//     using boost::uuids::detail::sha1;
+// 	using std::ifstream;
+// void writeShaToFile(std::string file) 
+// {
+//     using boost::uuids::detail::sha1;
+// 	using std::ifstream;
+// 	using std::string;
+//
+//     sha1 sha;
+// 	sha.process_bytes(content.c_str(), content.length());
+//
+// 	// bof... would prefer array...but the digest does not support it
+// 	unsigned int hash[5];
+// 	sha.get_digest(hash);
+//
+// 	std::stringstream stream;
+//
+// 	std::string result;
+// 	// there is something missing here...but what?
+// 	for (int i = 0; i < 5; ++i) {
+// 		stream << std::hex << hash[i]; 
+// 	}
+// 	content += stream.str();
+// }
+// 	using std::string;
+//
+//     sha1 sha;
+// 	sha.process_bytes(content.c_str(), content.length());
+//
+// 	// bof... would prefer array...but the digest does not support it
+// 	unsigned int hash[5];
+// 	sha.get_digest(hash);
+//
+// 	std::stringstream stream;
+//
+// 	std::string result;
+// 	// there is something missing here...but what?
+// 	for (int i = 0; i < 5; ++i) {
+// 		stream << std::hex << hash[i]; 
+// 	}
+// 	content += stream.str();
+// }
+
+void add() 
+{
+    std::cout << "Not yet implemented" << std::endl;
+}
+
+void commit() 
+{
+    std::cout << "Not yet implemented" << std::endl;
+}
+
+void checkout() 
+{
+    std::cout << "Not yet implemented" << std::endl;
+}
