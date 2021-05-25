@@ -20,7 +20,7 @@ void writeFile(std::string filePath, std::string fileText);
 std::string readFile(std::string filePath);
 //---------------------------
 
-const std::string GIT_PATH = "./../git/";
+const std::string GIT_PATH = boost::filesystem::current_path().append(".git/").string();
 
 // The main loop takes the input argument and 
 int main(int argc, char * arcv[])
@@ -139,19 +139,27 @@ void init()
 {
     std::cout << "Repository is being initialized..." << std::endl;
 
+    boost::system::error_code code; // Pour éviter les exceptions
+
     // > Créer le dossier '.git'
+    if (!boost::filesystem::exists(GIT_PATH, code))  // peut lancer une exception
+	{
+		boost::filesystem::create_directory(GIT_PATH); // exception possible
+	}
+
     //     > Faire dossier 'objects'
-    if (!boost::filesystem::exists(GIT_PATH + "objects"))  // peut lancer une exception
+    if (!boost::filesystem::exists(GIT_PATH + "objects", code))  // peut lancer une exception
 	{
 		boost::filesystem::create_directory(GIT_PATH + "objects"); // exception possible
 	}
 
     //     > Créer dossier 'heads' (contenant 'main' et autres branches)
-    //     ­­   > Créer fichier 'main' (ou 'master')
-        if (!boost::filesystem::exists(GIT_PATH + "heads"))  // peut lancer une exception
+    if (!boost::filesystem::exists(GIT_PATH + "heads", code))  // peut lancer une exception
 	{
-		boost::filesystem::create_directory(GIT_PATH + "heads/main"); // exception possible
+		boost::filesystem::create_directory(GIT_PATH + "heads"); // exception possible
 	}
+
+    //     ­­   > Créer fichier 'main' (ou 'master')
     writeFile(GIT_PATH + "heads/main", getRandSHA());
     
     //     > Ajouter fichier 'HEAD'
@@ -187,6 +195,8 @@ std::string readFile(std::string filePath)
 								// mais il faut s'assurer que le fichier existe
 	string content{	std::istreambuf_iterator<char>(file),
 					std::istreambuf_iterator<char>() };
+
+    return content;
 }
 
 void writeFile(std::string filePath, std::string fileText)
