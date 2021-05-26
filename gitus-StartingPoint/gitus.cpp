@@ -12,7 +12,7 @@ boost::system::error_code ec; // Pour éviter les exceptions
 void init();
 void createObjects();
 
-void add(std::string&);
+void add(std::string);
 
 void commit();
 
@@ -261,7 +261,7 @@ void writeFile(std::string filePath, std::string fileText)
 // 	content += stream.str();
 // }
 
-void add(std::string &filePath) 
+void add(std::string filePath) 
 {
     if (!boost::filesystem::exists(filePath, ec))  // peut lancer une exception
 	{
@@ -293,17 +293,13 @@ void add(std::string &filePath)
     }
     else
     {
-        fileName = filePath.substr(pos);
+        fileName = filePath.substr(pos+1);
     }
 
-    std::cout << "find last of : " << pos << std::endl; 
+    std::string stagingText = fileName + "\n\n" + std::to_string(file.length()) + "\n\n" + file;
 
-    std::string nbCharacters = file.length().to_string();
-
-    std::string stagingText = fileName + "\n" + std::to_string(file.length()) + "\n" + file;
-
-    writeFile(shaPath + sha1.substr(2), sha1);
-    
+    writeFile(shaPath + sha1.substr(2), stagingText);
+    std::cout << "The file " + filePath + " has been added succesfully" << std::endl;
 }
 
 void commit() 
