@@ -298,7 +298,7 @@ void add(std::string &filePath)
 
     std::cout << "find last of : " << pos << std::endl; 
 
-    std::string nbCharacters = (std::string)file.length();
+    std::string nbCharacters = file.length().to_string();
 
     std::string stagingText = fileName + "\n" + std::to_string(file.length()) + "\n" + file;
 
