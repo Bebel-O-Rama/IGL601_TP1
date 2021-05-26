@@ -7,10 +7,12 @@
 
 //---------------------------
 //METTRE DANS UN HEADER
+boost::system::error_code ec; // Pour éviter les exceptions
+
 void init();
 void createObjects();
 
-void add();
+void add(std::string);
 
 void commit();
 
@@ -19,6 +21,7 @@ void checkout();
 void writeFile(std::string filePath, std::string fileText);
 std::string readFile(std::string filePath);
 //---------------------------
+
 
 const std::string GIT_PATH = boost::filesystem::current_path().append(".git/").string();
 
@@ -70,7 +73,7 @@ int main(int argc, char * arcv[])
                 else
                 {
                     //TODO : Implement gitus add
-                    add();
+                    add(arcv[2]);
                 }
             }
             else
@@ -139,22 +142,21 @@ void init()
 {
     std::cout << "Repository is being initialized..." << std::endl;
 
-    boost::system::error_code code; // Pour éviter les exceptions
 
     // > Créer le dossier '.git'
-    if (!boost::filesystem::exists(GIT_PATH, code))  // peut lancer une exception
+    if (!boost::filesystem::exists(GIT_PATH, ec))  // peut lancer une exception
 	{
 		boost::filesystem::create_directory(GIT_PATH); // exception possible
 	}
 
     //     > Faire dossier 'objects'
-    if (!boost::filesystem::exists(GIT_PATH + "objects", code))  // peut lancer une exception
+    if (!boost::filesystem::exists(GIT_PATH + "objects", ec))  // peut lancer une exception
 	{
 		boost::filesystem::create_directory(GIT_PATH + "objects"); // exception possible
 	}
 
     //     > Créer dossier 'heads' (contenant 'main' et autres branches)
-    if (!boost::filesystem::exists(GIT_PATH + "heads", code))  // peut lancer une exception
+    if (!boost::filesystem::exists(GIT_PATH + "heads", ec))  // peut lancer une exception
 	{
 		boost::filesystem::create_directory(GIT_PATH + "heads"); // exception possible
 	}
@@ -259,9 +261,32 @@ void writeFile(std::string filePath, std::string fileText)
 // 	content += stream.str();
 // }
 
-void add() 
+void add(std::string filePath) 
 {
-    std::cout << "Not yet implemented" << std::endl;
+    if (!boost::filesystem::exists(filePath, ec))  // peut lancer une exception
+	{
+        if (ec.failed())
+		{
+			std::cout << "The path does not point to a existing file" << std::endl;
+            return;
+		}
+    }
+    
+    if (!boost::filesystem::exists(GIT_PATH + "objects", ec))  // peut lancer une exception
+	{
+        std::cout << "The folder \"objects\" does not exist" << std::endl << "Did you forget to call gitus init first?";
+        return;
+	}
+
+    std::string sha1 = getSHA(readFile(filePath));      
+    std::string shaPath = GIT_PATH + "objects/" + sha1.substr(0, 2) + "/";
+
+    
+
+    boost::filesystem::create_directory(shaPath); // exception possible
+    
+    writeFile(shaPath + sha1.substr(2), sha1);
+    
 }
 
 void commit() 

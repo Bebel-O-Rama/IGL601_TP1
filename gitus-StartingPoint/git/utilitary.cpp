@@ -13,13 +13,6 @@
 #include <boost/uuid/detail/sha1.hpp>
 
 
-
-// utilis�e pour les tests
-int GetAnswerToLifeUniverseAndEverything()
-{
-	return 42;
-}
-
 // cette fonction est d�di�e � �tre �limin�e -- seulement de test
 void TestDeTrucs() throw(boost::filesystem::filesystem_error) // le throw ici est "deprecated". Il est juste conserver � titre de documentation
 {

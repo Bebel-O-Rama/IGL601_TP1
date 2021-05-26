@@ -6,10 +6,10 @@
 #include "catch.hpp"
 #include <utilitary.h>
 
-TEST_CASE("is the world ok") 
-{
-	REQUIRE(GetAnswerToLifeUniverseAndEverything() == 42);
-	REQUIRE(GetAnswerToLifeUniverseAndEverything() != 41);
-	REQUIRE(GetAnswerToLifeUniverseAndEverything() != 43);
-}
+// TEST_CASE("is the world ok") 
+// {
+// 	REQUIRE(GetAnswerToLifeUniverseAndEverything() == 42);
+// 	REQUIRE(GetAnswerToLifeUniverseAndEverything() != 41);
+// 	REQUIRE(GetAnswerToLifeUniverseAndEverything() != 43);
+// }
 
