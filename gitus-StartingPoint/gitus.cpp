@@ -18,7 +18,7 @@ void commit();
 
 void checkout();
 
-void writeFile(std::string filePath, std::string fileText);
+void writeFile(std::string filePath, std::string fileText, bool isAppend = false);
 std::string readFile(std::string filePath);
 //---------------------------
 
@@ -201,15 +201,42 @@ std::string readFile(std::string filePath)
     return content;
 }
 
-void writeFile(std::string filePath, std::string fileText)
+void writeFile(std::string filePath, std::string fileText, bool isAppend)
 {
     using std::ofstream;
+    
+    std::ofstream ofs;
 
-    std::ofstream ofs (filePath, std::ofstream::out);
+    if (isAppend)
+    {
+        ofs = std::ofstream(filePath, std::ofstream::app);    
+    }
+    else
+    {
+        ofs = std::ofstream(filePath, std::ofstream::out);
+    }
 
     ofs << fileText;
 
     ofs.close();
+}
+
+void writeIndexFile(std::string filePath, std::string fileText)
+{
+    std::string index = readFile(filePath);
+    int pos = index.find(fileText);
+    if (pos != std::string::npos)
+    {       
+        for (int i = pos; i < fileText.length() + pos; ++i)
+        {
+            index[i] = fileText[i - pos];
+        }
+        writeFile(filePath, index);
+    }
+    else
+    {
+        writeFile(filePath, fileText, true);
+    }
 }
 
 //-----------------------------------------
@@ -299,6 +326,17 @@ void add(std::string filePath)
     std::string stagingText = fileName + "\n\n" + std::to_string(file.length()) + "\n\n" + file;
 
     writeFile(shaPath + sha1.substr(2), stagingText);
+
+    std::string index = sha1 + " " + filePath + "\n";
+
+    if (!boost::filesystem::exists(GIT_PATH + "index", ec))  // peut lancer une exception
+	{
+        std::cout << "The file \"index\" does not exist" << std::endl << "Did you forget to call gitus init first?" << std::endl;
+        return;
+	}
+
+    //writeFile(GIT_PATH + "index", index, true);
+    writeIndexFile(GIT_PATH + "index", index);
     std::cout << "The file " + filePath + " has been added succesfully" << std::endl;
 }
 
