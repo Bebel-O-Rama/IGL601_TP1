@@ -311,19 +311,8 @@ void add(std::string filePath)
     std::string shaPath = GIT_PATH + "objects/" + sha1.substr(0, 2) + "/";
 
     boost::filesystem::create_directory(shaPath); // exception possible
-    std::string fileName;
-    
-    int pos = filePath.find_last_of("/");
-    if (pos == -1)
-    {
-        fileName = filePath;
-    }
-    else
-    {
-        fileName = filePath.substr(pos+1);
-    }
 
-    std::string stagingText = fileName + "\n\n" + std::to_string(file.length()) + "\n\n" + file;
+    std::string stagingText = filePath + "\n\n" + std::to_string(file.length()) + "\n\n" + file;
 
     writeFile(shaPath + sha1.substr(2), stagingText);
 
