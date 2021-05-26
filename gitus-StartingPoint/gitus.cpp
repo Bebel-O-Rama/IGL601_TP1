@@ -12,7 +12,7 @@ boost::system::error_code ec; // Pour éviter les exceptions
 void init();
 void createObjects();
 
-void add(std::string);
+void add(std::string&);
 
 void commit();
 
@@ -261,30 +261,47 @@ void writeFile(std::string filePath, std::string fileText)
 // 	content += stream.str();
 // }
 
-void add(std::string filePath) 
+void add(std::string &filePath) 
 {
     if (!boost::filesystem::exists(filePath, ec))  // peut lancer une exception
 	{
         if (ec.failed())
 		{
-			std::cout << "The path does not point to a existing file" << std::endl;
+			std::cout << "The path does not point to an existing file" << std::endl;
             return;
 		}
     }
     
     if (!boost::filesystem::exists(GIT_PATH + "objects", ec))  // peut lancer une exception
 	{
-        std::cout << "The folder \"objects\" does not exist" << std::endl << "Did you forget to call gitus init first?";
+        std::cout << "The folder \"objects\" does not exist" << std::endl << "Did you forget to call gitus init first?" << std::endl;
         return;
 	}
 
-    std::string sha1 = getSHA(readFile(filePath));      
+    std::string file = readFile(filePath);
+
+    std::string sha1 = getSHA(file);      
     std::string shaPath = GIT_PATH + "objects/" + sha1.substr(0, 2) + "/";
 
-    
-
     boost::filesystem::create_directory(shaPath); // exception possible
+    std::string fileName;
     
+    int pos = filePath.find_last_of("/");
+    if (pos == -1)
+    {
+        fileName = filePath;
+    }
+    else
+    {
+        fileName = filePath.substr(pos);
+    }
+
+    std::cout << "find last of : " << pos << std::endl; 
+
+    std::string nbCharacters = (std::string)file.length();
+
+    std::string stagingText = fileName + "\n" + std::to_string(file.length()) + "\n" + file;
+
     writeFile(shaPath + sha1.substr(2), sha1);
     
 }
