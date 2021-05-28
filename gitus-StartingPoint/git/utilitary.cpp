@@ -133,12 +133,22 @@ std::string getSHA(std::string inputStr)
 
 std::string getRandSHA()
 {
-	time_t timer = time_t();
-    const time_t currTime = time(&timer);
-	std::string sha1 = getSHA(ctime(&currTime)); 
+	std::string sha1 = getSHA(getCurrTime()); 
 
 	//A commenter si on en veut plus
 	std::cout << sha1 << std::endl;
 
     return sha1;
+}
+
+std::string getCurrTime()
+{
+	time_t timer = time_t();
+    const time_t currTime = time(&timer);
+	std::string timeNow = ctime(&currTime); 
+
+	//A commenter si on en veut plus
+	std::cout << timeNow << std::endl;
+
+    return timeNow;
 }

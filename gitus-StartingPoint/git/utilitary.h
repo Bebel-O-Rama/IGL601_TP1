@@ -5,4 +5,5 @@
 void TestDeTrucs() throw (boost::filesystem::filesystem_error);
 std::string getSHA(std::string);
 std::string getRandSHA();
+std::string getCurrTime();
 

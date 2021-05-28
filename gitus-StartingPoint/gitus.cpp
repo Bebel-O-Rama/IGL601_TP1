@@ -7,28 +7,35 @@
 
 //---------------------------
 //METTRE DANS UN HEADER
-boost::system::error_code ec; // Pour éviter les exceptions
+
+// boost::system::error_code ec; // Pour eviter les exceptions
 
 void init();
-void createObjects();
 
 void add(std::string);
 
-void commit();
+void commit(std::string, std::string);
 
-void checkout();
+void checkout(std::string);
 
 void writeFile(std::string filePath, std::string fileText, bool isAppend = false);
+void writeIndexFile(std::string indexPath, std::string fileText);
 std::string readFile(std::string filePath);
+
+bool pathExists(std::string path);
+bool fileExists(std::string filePath);
+bool indexExists();
+
+void createTreeNode(std::string prevSHA1, std::string currSHA1, std::string * modifiedFilesSHA1);
 //---------------------------
 
 
 const std::string GIT_PATH = boost::filesystem::current_path().append(".git/").string();
 
-// The main loop takes the input argument and 
+// Le main est le point d'entree du programme
 int main(int argc, char * arcv[])
 {
-    // If the user entered a command
+    // Determine si l'utilisateur a entre une commande
     if(argc > 1)
     {
         if(strcmp(arcv[1], "--help") == 0)
@@ -54,7 +61,6 @@ int main(int argc, char * arcv[])
             }
             else if (argc == 2)
             {
-                //TODO : Implement gitus init
                 init();
             }
             else
@@ -72,7 +78,6 @@ int main(int argc, char * arcv[])
                 }
                 else
                 {
-                    //TODO : Implement gitus add
                     add(arcv[2]);
                 }
             }
@@ -96,8 +101,7 @@ int main(int argc, char * arcv[])
             }
             else if (argc == 4)
             {
-                //TODO : Implement gitus commit
-                commit();
+                commit(arcv[2], arcv[3]);
             }  
             else
             {
@@ -114,8 +118,7 @@ int main(int argc, char * arcv[])
                 }
                 else
                 {
-                    //TODO : Implement gitus checkout
-                    checkout();
+                    checkout(arcv[2]);
                 }
             }
             else
@@ -136,32 +139,31 @@ int main(int argc, char * arcv[])
     return 0;
 }
 
-//-----------------------------------------
-// TODO: Wrapper dans une classe (?)
+// Initialise le depot
 void init() 
 {
     std::cout << "Repository is being initialized..." << std::endl;
 
 
-    // > Créer le dossier '.git'
-    if (!boost::filesystem::exists(GIT_PATH, ec))  // peut lancer une exception
+    // > Creer le dossier '.git' s'il n'existe pas
+    if (pathExists(GIT_PATH))
 	{
-		boost::filesystem::create_directory(GIT_PATH); // exception possible
+		boost::filesystem::create_directory(GIT_PATH);
 	}
 
-    //     > Faire dossier 'objects'
-    if (!boost::filesystem::exists(GIT_PATH + "objects", ec))  // peut lancer une exception
+    //     > Faire dossier 'objects' s'il n'existe pas
+    if (!pathExists(GIT_PATH + "objects"))
 	{
-		boost::filesystem::create_directory(GIT_PATH + "objects"); // exception possible
+		boost::filesystem::create_directory(GIT_PATH + "objects");
 	}
 
-    //     > Créer dossier 'heads' (contenant 'main' et autres branches)
-    if (!boost::filesystem::exists(GIT_PATH + "heads", ec))  // peut lancer une exception
+    //     > Creer dossier 'heads' (contenant 'main' et autres branches) s'il n'existe pas
+    if (!pathExists(GIT_PATH + "heads"))
 	{
-		boost::filesystem::create_directory(GIT_PATH + "heads"); // exception possible
+		boost::filesystem::create_directory(GIT_PATH + "heads");
 	}
 
-    //     ­­   > Créer fichier 'main' (ou 'master')
+    //     ­­   > Creer fichier 'main' (ou 'master')
     writeFile(GIT_PATH + "heads/main", getRandSHA());
     
     //     > Ajouter fichier 'HEAD'
@@ -171,7 +173,7 @@ void init()
     writeFile(GIT_PATH + "index", "");
 
     //
-    //----------NON-DEMANDÉS----------
+    //----------NON-DEMANDES----------
     //
     //     > Dossier 'refs'
     //     > Dossier 'info'
@@ -181,12 +183,7 @@ void init()
     std::cout << "Repository has been initialized successfully!" << std::endl;
 }
 
-void createObjects()
-{
-
-}
-//-----------------------------------------
-
+// Lit un fichier et retourne son contenu
 std::string readFile(std::string filePath)
 {
     using std::ifstream;
@@ -201,6 +198,7 @@ std::string readFile(std::string filePath)
     return content;
 }
 
+// Ecrit dans un fichier. On peut choisir d'ajouter ou d'ecraser le contenu. Ecrase par defaut
 void writeFile(std::string filePath, std::string fileText, bool isAppend)
 {
     using std::ofstream;
@@ -221,98 +219,63 @@ void writeFile(std::string filePath, std::string fileText, bool isAppend)
     ofs.close();
 }
 
-void writeIndexFile(std::string filePath, std::string fileText)
+// Ecrit dans le fichier index situe a 'indexPath' le text 'fileText'
+void writeIndexFile(std::string fileText)
 {
-    std::string index = readFile(filePath);
+    const std::string indexPath = GIT_PATH + "index";
+    std::string index = readFile(indexPath);
     int pos = index.find(fileText);
+
     if (pos != std::string::npos)
     {       
         for (int i = pos; i < fileText.length() + pos; ++i)
         {
             index[i] = fileText[i - pos];
         }
-        writeFile(filePath, index);
+        writeFile(indexPath, index);
     }
     else
     {
-        writeFile(filePath, fileText, true);
+        writeFile(indexPath, fileText, true);
     }
 }
 
-//-----------------------------------------
-// A retirer: utiliser utilitary.cpp
-//-----------------------------------------
-
-// void writeShaToFile(std::string file) 
-// {
-//     using boost::uuids::detail::sha1;
-// 	using std::ifstream;
-// void writeShaToFile(std::string file) 
-// {
-//     using boost::uuids::detail::sha1;
-// 	using std::ifstream;
-// 	using std::string;
-//
-//     sha1 sha;
-// 	sha.process_bytes(content.c_str(), content.length());
-//
-// 	// bof... would prefer array...but the digest does not support it
-// 	unsigned int hash[5];
-// 	sha.get_digest(hash);
-//
-// 	std::stringstream stream;
-//
-// 	std::string result;
-// 	// there is something missing here...but what?
-// 	for (int i = 0; i < 5; ++i) {
-// 		stream << std::hex << hash[i]; 
-// 	}
-// 	content += stream.str();
-// }
-// 	using std::string;
-//
-//     sha1 sha;
-// 	sha.process_bytes(content.c_str(), content.length());
-//
-// 	// bof... would prefer array...but the digest does not support it
-// 	unsigned int hash[5];
-// 	sha.get_digest(hash);
-//
-// 	std::stringstream stream;
-//
-// 	std::string result;
-// 	// there is something missing here...but what?
-// 	for (int i = 0; i < 5; ++i) {
-// 		stream << std::hex << hash[i]; 
-// 	}
-// 	content += stream.str();
-// }
-
 void add(std::string filePath) 
 {
-    if (!boost::filesystem::exists(filePath, ec))  // peut lancer une exception
+    // Verifier si le fichier existe
+    if (!fileExists(filePath))
 	{
-        if (ec.failed())
-		{
-			std::cout << "The path does not point to an existing file" << std::endl;
-            return;
-		}
+        // if (ec.failed())
+		// {
+        std::cout << "The path does not point to an existing file" << std::endl;
+        return;
+		// }
     }
-    
-    if (!boost::filesystem::exists(GIT_PATH + "objects", ec))  // peut lancer une exception
+
+
+    // Verifier si le dossier objects existe
+    if (!pathExists(GIT_PATH + "objects"))
 	{
         std::cout << "The folder \"objects\" does not exist" << std::endl << "Did you forget to call gitus init first?" << std::endl;
         return;
 	}
 
+
+    // Lecture du fichier a add
     std::string file = readFile(filePath);
 
+
+    // Generation d'un SHA1 a partir du contenu du fichier
     std::string sha1 = getSHA(file);      
     std::string shaPath = GIT_PATH + "objects/" + sha1.substr(0, 2) + "/";
 
-    boost::filesystem::create_directory(shaPath); // exception possible
+
+    // Un enregistrement local est cree contenant les informations utiles sur le fichier
+    boost::filesystem::create_directory(shaPath);
     std::string fileName;
     
+
+    // Obtention du nom du fichier
     int pos = filePath.find_last_of("/");
     if (pos == -1)
     {
@@ -323,29 +286,115 @@ void add(std::string filePath)
         fileName = filePath.substr(pos+1);
     }
 
+
+    // Formattage des informations contenues dans le fichier
     std::string stagingText = fileName + "\n\n" + std::to_string(file.length()) + "\n\n" + file;
 
+
+    // Ecriture du fichier dans un dossier contenant les 2 premiers caracteres du SHA1
     writeFile(shaPath + sha1.substr(2), stagingText);
 
+
+    // Ecriture dans l'index
     std::string index = sha1 + " " + filePath + "\n";
 
-    if (!boost::filesystem::exists(GIT_PATH + "index", ec))  // peut lancer une exception
-	{
-        std::cout << "The file \"index\" does not exist" << std::endl << "Did you forget to call gitus init first?" << std::endl;
-        return;
-	}
+    writeIndexFile(index);
 
-    //writeFile(GIT_PATH + "index", index, true);
-    writeIndexFile(GIT_PATH + "index", index);
+
     std::cout << "The file " + filePath + " has been added succesfully" << std::endl;
 }
 
-void commit() 
+void commit(std::string msg, std::string author) 
+{
+    //      Verifie si le depot a ete initialise en verifiant la presence du fichier index
+    if (!indexExists())
+	{
+        return;
+	}
+
+    std::string commitSHA1 = getRandSHA();
+
+    //      Obtention de l'emplacement du dernier commit à partir de HEAD
+    std::string headRef = readFile(GIT_PATH + "HEAD").substr(5);
+    std::string lastCommitSHA1 = readFile(GIT_PATH + headRef);
+
+
+    // 1. Lire les elements dans .git/index
+    std::string elements = readFile(GIT_PATH + "index");
+
+
+    // 2. Creer un arbre à partir du root
+    if (!pathExists(GIT_PATH + "tree"))
+	{
+        boost::filesystem::create_directory(GIT_PATH + "tree");
+
+        std::cout << "gets in there";
+    }
+
+    // Le nom de l'arbre correspond au commit auquel il fait reference
+    // Son contenu represente le SHA1 de son predesceceur
+    writeFile(GIT_PATH + "tree/" + commitSHA1, lastCommitSHA1);
+
+    // 3. Creer un commit et l'ecrire dans la base de donnees
+    //     a. Auteur
+    //     b. Commit parent
+    //     c. SHA1 de l'arbre
+    //     d. Date (h:m:s)
+    //     e. Message
+    if (!pathExists(GIT_PATH + "commits"))
+	{
+        boost::filesystem::create_directory(GIT_PATH + "commits");
+    }
+    std::string commit = author + '\n' + lastCommitSHA1 + '\n' + commitSHA1 + '\n' + getCurrTime() + '\n' + msg + '\n';
+
+    writeFile(GIT_PATH + "commits/" + commitSHA1, commit);
+
+
+    // 4. Eliminer les changements dans le .git/index
+    writeIndexFile("");
+    
+
+    ////////////////////////////////////////////////////////
+    //  A REVOIR: SI ON ECRIT DIRECT LE COMMIT DANS HEAD  //
+    ////////////////////////////////////////////////////////
+
+    // 5. Inserer le SHA1 du commit dans le fichier .git/HEAD
+    // ­> On ecrira plutot la reference vers ce commit dans HEAD
+    //   Cela simplifiera un peu les choses pour l'implementation du checkout
+    writeFile(GIT_PATH + headRef, commitSHA1);
+
+}
+
+void checkout(std::string commitID) 
 {
     std::cout << "Not yet implemented" << std::endl;
 }
 
-void checkout() 
+void createTreeNode(std::string prevSHA1, std::string currSHA1, std::string * modifiedFilesSHA1)
 {
-    std::cout << "Not yet implemented" << std::endl;
+
+}
+
+bool pathExists(std::string path) 
+{
+    boost::system::error_code ec; // Pour eviter les exceptions
+
+    return boost::filesystem::is_directory(path, ec);
+}
+
+bool fileExists(std::string filePath) 
+{
+    boost::system::error_code ec; // Pour eviter les exceptions
+
+    return boost::filesystem::exists(filePath, ec);
+}
+
+bool indexExists() 
+{
+    if (!fileExists(GIT_PATH + "index"))
+	{
+        std::cout << "The file \"index\" does not exist" << std::endl << "Did you forget to call gitus init first?" << std::endl;
+        return false;
+	}
+    return true;
 }
