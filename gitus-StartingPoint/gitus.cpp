@@ -145,31 +145,31 @@ void init()
     std::cout << "Repository is being initialized..." << std::endl;
 
 
-    // > Creer le dossier '.git' s'il n'existe pas
-    if (pathExists(GIT_PATH))
+    //  > Creer le dossier '.git' s'il n'existe pas
+    if (!pathExists(GIT_PATH))
 	{
 		boost::filesystem::create_directory(GIT_PATH);
 	}
 
-    //     > Faire dossier 'objects' s'il n'existe pas
+    //  > Faire dossier 'objects' s'il n'existe pas
     if (!pathExists(GIT_PATH + "objects"))
 	{
 		boost::filesystem::create_directory(GIT_PATH + "objects");
 	}
 
-    //     > Creer dossier 'heads' (contenant 'main' et autres branches) s'il n'existe pas
+    //  > Creer dossier 'heads' (contenant 'main' et autres branches) s'il n'existe pas
     if (!pathExists(GIT_PATH + "heads"))
 	{
 		boost::filesystem::create_directory(GIT_PATH + "heads");
 	}
 
-    //     ­­   > Creer fichier 'main' (ou 'master')
+    //  > Creer fichier 'main' (ou 'master')
     writeFile(GIT_PATH + "heads/main", getRandSHA());
     
-    //     > Ajouter fichier 'HEAD'
+    //  > Ajouter fichier 'HEAD'
     writeFile(GIT_PATH + "HEAD", "ref: heads/main");
 
-    //     > Ajouter fichier 'index'
+    //  > Ajouter fichier 'index'
     writeFile(GIT_PATH + "index", "");
 
     //
@@ -306,22 +306,28 @@ void add(std::string filePath)
 
 void commit(std::string msg, std::string author) 
 {
-    //      Verifie si le depot a ete initialise en verifiant la presence du fichier index
+    //  Verifie si le depot a ete initialise en verifiant la presence du fichier index
     if (!indexExists())
 	{
+        std::cout << "The index file is missing. To initialize the repo, use the method \"gitus init\" first?" << std::endl;
+        return;
+	}
+
+    //  1. Lire les elements dans .git/index
+    std::string elements = readFile(GIT_PATH + "index");
+
+    //  Verifie s'il y a des fichiers prets a etre sauvegarde dans un commit
+    if (elements.empty())
+	{
+        std::cout << "There are no file to commit. To add a file to a commit, use the method \"gitus add <pathspec>\" first." << std::endl;
         return;
 	}
 
     std::string commitSHA1 = getRandSHA();
-
-    //      Obtention de l'emplacement du dernier commit à partir de HEAD
+  
+    //  Obtention de l'emplacement du dernier commit à partir de HEAD
     std::string headRef = readFile(GIT_PATH + "HEAD").substr(5);
     std::string lastCommitSHA1 = readFile(GIT_PATH + headRef);
-
-
-    // 1. Lire les elements dans .git/index
-    std::string elements = readFile(GIT_PATH + "index");
-
 
     // 2. Creer un arbre à partir du root
     if (!pathExists(GIT_PATH + "tree"))
