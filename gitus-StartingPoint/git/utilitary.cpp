@@ -189,7 +189,9 @@ bool writeIndexFile(std::string fileText, bool isCommit)
 	// Si le fichier ne fait pas deja partie de l'index, on peut l'ajouter
 	if (posIndexFileName == std::string::npos)
 	{
-        writeFile(indexPath, fileText, true);
+        index += fileText;
+		writeFile(indexPath, index);
+		//writeFile(indexPath, fileText, true);
 		return true;
 	}
 	
@@ -203,8 +205,6 @@ bool writeIndexFile(std::string fileText, bool isCommit)
 			int lineDelimiterB = 0;
 
 			do {
-			std::cout << "lineDelimiterA : " << lineDelimiterA << std::endl;
-			std::cout << "lineDelimiterB : " << lineDelimiterB << std::endl;
 				lineDelimiterA = lineDelimiterB;
 				lineDelimiterB = index.find('\n', lineDelimiterA+1);
 			}
@@ -241,6 +241,51 @@ std::string readFile(std::string filePath)
 					std::istreambuf_iterator<char>() };
 
     return content;
+}
+
+std::string getMergedTree(std::string currentIndex)
+{
+	// S'il s'agit du premier commit, il n'y aura forcement pas de difference. On peut donc sortir
+	std::string headSHA1 = readFile(GIT_PATH + "HEAD") ;
+	if (headSHA1.empty())
+	{
+		return currentIndex;
+	}
+	
+	// Il faut aller chercher le contenu du tree du commit precedent
+	std::string oldCommit = readFile(GIT_PATH + "objects/" + headSHA1.substr(0,2) + "/" + headSHA1.substr(2));
+	int lineDelimiterA = 0;
+	int lineDelimiterB = 0;
+	for (int i = 0; i < 3; i++)
+	{
+		lineDelimiterA = lineDelimiterB;
+		lineDelimiterB = oldCommit.find('\n', lineDelimiterA+1);
+	}
+
+	std::string oldTree = readFile(GIT_PATH + "tree/" + oldCommit.substr(lineDelimiterA+1, lineDelimiterB - lineDelimiterA-1));
+
+	// Il faut ensuite ajouter tout les elements du tree precedent qui sont manquant au tree actuel
+	lineDelimiterA = 0;
+	lineDelimiterB = 0;
+	std::string oldEntry;
+	do {
+		lineDelimiterA = lineDelimiterB +1;
+		lineDelimiterB = oldTree.find('\n', lineDelimiterA);
+		if (lineDelimiterA == 1)
+		{
+			oldEntry = oldTree.substr(lineDelimiterA-1, lineDelimiterB - lineDelimiterA+1);
+		}
+		else
+		{
+			oldEntry = oldTree.substr(lineDelimiterA-1, lineDelimiterB - lineDelimiterA+1);
+		}
+		writeIndexFile(oldEntry, true);
+	}
+	while (lineDelimiterB < oldTree.length() - 1);
+	
+	std::string elements = readFile(GIT_PATH + "index");
+
+	return elements;
 }
 
 bool pathExists(std::string path) 

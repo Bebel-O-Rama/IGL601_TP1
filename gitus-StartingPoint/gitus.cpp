@@ -231,10 +231,12 @@ void commit(std::string msg, std::string author)
 	{
         boost::filesystem::create_directory(GIT_PATH + "tree");
     }
+    
+    std::string newTree = getMergedTree(elements);
 
-    std::string sha1Tree = getSHA(elements);
+    std::string sha1Tree = getSHA(newTree);
     // Le nouveau fichier dans l'arbre correspond à l'index du commit et son nom est le SHA1 genere a partir de l'index
-    writeFile(GIT_PATH + "tree/" + sha1Tree, elements);
+    writeFile(GIT_PATH + "tree/" + sha1Tree, newTree);
 
     // 3. Creer un commit et l'ecrire dans la base de donnees
     //     a. Auteur
