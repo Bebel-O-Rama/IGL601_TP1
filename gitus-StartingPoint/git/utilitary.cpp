@@ -152,3 +152,117 @@ std::string getCurrTime()
 
     return timeNow;
 }
+
+// Ecrit dans un fichier. On peut choisir d'ajouter ou d'ecraser le contenu. Ecrase par defaut
+void writeFile(std::string filePath, std::string fileText, bool isAppend)
+{
+    using std::ofstream;
+    
+    std::ofstream ofs;
+
+    if (isAppend)
+    {
+        ofs = std::ofstream(filePath, std::ofstream::app);    
+    }
+    else
+    {
+        ofs = std::ofstream(filePath, std::ofstream::out);
+    }
+
+    ofs << fileText;
+
+    ofs.close();
+}
+
+
+
+// Ecrit dans le fichier index situe a 'indexPath' le text 'fileText'. S'il s'agit d'un commit (par défaut non) on n'ajoute pas si le fichier est déjà présent
+bool writeIndexFile(std::string fileText, bool isCommit)
+{
+    const std::string indexPath = GIT_PATH + "index";
+
+    std::string index = readFile(indexPath);
+	int posDelimiter = fileText.find(" ");
+	std::string fileName = fileText.substr(posDelimiter+1);
+	int posIndexFileName = index.find(fileName);
+
+	// Si le fichier ne fait pas deja partie de l'index, on peut l'ajouter
+	if (posIndexFileName == std::string::npos)
+	{
+        writeFile(indexPath, fileText, true);
+		return true;
+	}
+	
+	// On continue uniquement si l'ajout ne vient pas d'un commit anterieur
+	if (!isCommit)
+	{
+		// On continue uniquement si le fichier a ete modifie depuis la derniere fois qu'il a ete ajoute au repo (on regarde si le sha1 est le meme)
+		if (index.find(fileText) == std::string::npos)
+		{
+			int lineDelimiterA = 0; 
+			int lineDelimiterB = 0;
+
+			do {
+			std::cout << "lineDelimiterA : " << lineDelimiterA << std::endl;
+			std::cout << "lineDelimiterB : " << lineDelimiterB << std::endl;
+				lineDelimiterA = lineDelimiterB;
+				lineDelimiterB = index.find('\n', lineDelimiterA+1);
+			}
+			while (lineDelimiterB < posIndexFileName);
+
+			index.erase(lineDelimiterA, lineDelimiterB - lineDelimiterA);
+			index += fileText;
+			if (index.at(0) == '\n')
+			{
+				index.erase(0, 1);
+			}
+			writeFile(indexPath, index);
+			return true;
+		}
+
+		// On retourne faux comme il n'y a pas de nouveau fichier a ajouter
+		return false;
+	}
+
+	// On retourne faux comme le fichier est deja present, donc rien est change dans l'index
+	return false;
+}
+
+// Lit un fichier et retourne son contenu
+std::string readFile(std::string filePath)
+{
+    using std::ifstream;
+	using std::string;
+
+	// lecture du fichier
+	ifstream file(filePath);	// pas besoin de gerer l'acces
+								// mais il faut s'assurer que le fichier existe
+	string content{	std::istreambuf_iterator<char>(file),
+					std::istreambuf_iterator<char>() };
+
+    return content;
+}
+
+bool pathExists(std::string path) 
+{
+    boost::system::error_code ec; // Pour eviter les exceptions
+
+    return boost::filesystem::is_directory(path, ec);
+}
+
+bool fileExists(std::string filePath) 
+{
+    boost::system::error_code ec; // Pour eviter les exceptions
+
+    return boost::filesystem::exists(filePath, ec);
+}
+
+bool indexExists() 
+{
+    if (!fileExists(GIT_PATH + "index"))
+	{
+        std::cout << "The file \"index\" does not exist" << std::endl << "Did you forget to call gitus init first?" << std::endl;
+        return false;
+	}
+    return true;
+}
